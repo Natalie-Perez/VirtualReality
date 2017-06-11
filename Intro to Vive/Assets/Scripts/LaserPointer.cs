@@ -4,6 +4,21 @@ using UnityEngine;
 
 public class LaserPointer : MonoBehaviour {
 
+	public Transform cameraRigTransform; 
+
+	public GameObject teleportReticlePrefab;
+
+	private GameObject reticle;
+
+	private Transform teleportReticleTransform; 
+
+	public Transform headTransform; 
+
+	public Vector3 teleportReticleOffset; 
+
+	public LayerMask teleportMask; 
+
+	private bool shouldTeleport; 
 
 	private SteamVR_TrackedObject trackedObj;
 
@@ -40,7 +55,19 @@ public class LaserPointer : MonoBehaviour {
 	}
 
 
+	private void Teleport()
+	{
 
+		shouldTeleport = false;
+
+		reticle.SetActive(false);
+
+		Vector3 difference = cameraRigTransform.position - headTransform.position;
+
+		difference.y = 0;
+
+		cameraRigTransform.position = hitPoint + difference;
+	}
 
 
 
@@ -50,6 +77,10 @@ public class LaserPointer : MonoBehaviour {
 		laser = Instantiate(laserPrefab);
 
 		laserTransform = laser.transform;
+
+		reticle = Instantiate(teleportReticlePrefab);
+
+		teleportReticleTransform = reticle.transform;
 	}
 	
 	// Update is called once per frame
@@ -59,15 +90,27 @@ public class LaserPointer : MonoBehaviour {
 		{
 			RaycastHit hit;
 
-			if (Physics.Raycast(trackedObj.transform.position, transform.forward, out hit, 100))
+			if (Physics.Raycast(trackedObj.transform.position, transform.forward, out hit, 100, teleportMask))
 			{
 				hitPoint = hit.point;
 				ShowLaser(hit);
+
+				reticle.SetActive(true);
+
+				teleportReticleTransform.position = hitPoint + teleportReticleOffset;
+
+				shouldTeleport = true;
 			}
 		}
 		else
 		{
 			laser.SetActive(false);
+			reticle.SetActive(false);
+		}
+
+		if (Controller.GetPressUp(SteamVR_Controller.ButtonMask.Touchpad) && shouldTeleport)
+		{
+			Teleport();
 		}
 	}
 }
